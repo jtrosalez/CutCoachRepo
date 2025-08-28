@@ -12,8 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: List files (debug)
-        run: ls -la && find . -maxdepth 4 -type f -name "settings.gradle" -print
+      - name: Debug: list repo and locate settings.gradle
+        run: |
+          echo "PWD=$(pwd)"
+          ls -la
+          echo "Searching for settings.gradle..."
+          find . -type f -name settings.gradle -print
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -27,18 +31,21 @@ jobs:
       - name: Accept SDK licenses
         run: yes | sdkmanager --licenses
 
-      # Newer Gradle setup action (replaces gradle/gradle-build-action)
-      - name: Set up Gradle
+      # Use supported Gradle for AGP 8.5.x
+      - name: Set up Gradle (8.7)
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
 
       - name: Build debug APK (auto-detect project dir)
         run: |
           PROJ_DIR="$(dirname "$(find . -type f -name settings.gradle | head -n1)")"
           echo "Project directory: $PROJ_DIR"
           cd "$PROJ_DIR"
-          gradle assembleDebug
+          gradle --version
+          gradle assembleDebug --stacktrace
 
-      - name: Upload APK artifact (find it anywhere)
+      - name: Upload APK artifact (glob)
         uses: actions/upload-artifact@v4
         with:
           name: CutCoach-debug-apk
